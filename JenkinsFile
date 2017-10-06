@@ -1,0 +1,40 @@
+node {
+       
+    stage('preparation') {
+        echo 'Preparation'
+        git 'https://github.com/EmmaDeman/spring-framework-petclinic'
+    }
+
+    stage('build') {
+        echo 'Build'
+        withMaven(jdk: 'jdk1.8', maven: 'maven') {
+            bat "mvn clean package"
+            junit '**/target/surefire-reports/TEST-*.xml'
+            archiveArtifacts 'target/*.war'              
+        }
+    }
+
+    stage('quality') {
+        echo 'Quality'
+        withMaven(jdk: 'jdk1.8', maven: 'maven') {
+            bat "mvn checkstyle:checkstyle pmd:pmd compile sonar:sonar"
+        }    
+    }
+
+    stage('deploy to nexus') {
+        echo 'deploy to nexus'
+        withMaven(jdk: 'jdk1.8', maven: 'maven'){
+            //bat "mvn clean install deploy:deploy -DaltDeploymentRepository=nexus::default::http://localhost:8081/repository/maven-releases/"
+        }   
+    }
+
+    stage('deploy to tomcat') {
+        echo 'deploy to tomcat'
+        
+        withMaven(jdk: 'jdk1.8', maven: 'maven'){
+            bat "mvn -e tomcat7:deploy -Dmode=war -Dmaven.tomcat.url=http://localhost:10080/manager/html -Dtomcat.username='tomcat' -Dtomcat.password='tomcat' -Dmaven.tomcat.update='true' "
+    }   }
+    
+    
+    
+}
